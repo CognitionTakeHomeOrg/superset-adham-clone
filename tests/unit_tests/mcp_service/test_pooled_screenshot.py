@@ -15,11 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from unittest.mock import MagicMock, patch
 
-# To set the images of your preferred database, you may create a mapping here with engine and locations of the relevant images. The image can be hosted locally inside your static/file directory or online (e.g. S3).
+from superset.mcp_service.screenshot.pooled_screenshot import PooledBaseScreenshot
 
-# DB_IMAGES:
-#   datafusion: "path/to/image/datafusion.jpg"
-#   postgresql: "path/to/image/postgres.jpg"
-#   bigquery: "path/to/s3bucket/bigquery.jpg"
-#   snowflake: "path/to/image/snowflake.jpg"
+
+@patch("superset.mcp_service.screenshot.pooled_screenshot.retry_screenshot_operation")
+def test_get_screenshot_accepts_base_log_context(
+    mock_retry_screenshot_operation: MagicMock,
+) -> None:
+    screenshot = PooledBaseScreenshot("http://example.com", "digest")
+    user = MagicMock()
+
+    screenshot.get_screenshot(user, log_context="cache_key=abc")
+
+    mock_retry_screenshot_operation.assert_called_once_with(
+        screenshot._get_screenshot_internal,  # pylint: disable=protected-access
+        user,
+        None,
+    )

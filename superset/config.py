@@ -937,9 +937,6 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # Enable drill-to-detail functionality in charts
     # @lifecycle: deprecated
     "DRILL_TO_DETAIL": True,
-    # Allow JavaScript in chart controls. WARNING: XSS security vulnerability!
-    # @lifecycle: deprecated
-    "ENABLE_JAVASCRIPT_CONTROLS": False,
 }
 
 # ------------------------------
@@ -1281,8 +1278,7 @@ SUPERSET_CACHE_WARMUP_USER: str | None = None
 # Time before selenium times out after trying to locate an element on the page and wait
 # for that element to load for a screenshot.
 SCREENSHOT_LOCATE_WAIT = int(timedelta(seconds=10).total_seconds())
-# Time before selenium times out after waiting for all DOM class elements named
-# "loading" are gone.
+# Time before screenshot capture times out while waiting for chart readiness.
 SCREENSHOT_LOAD_WAIT = int(timedelta(minutes=1).total_seconds())
 # Maximum time (in seconds) selenium waits for an initial page navigation
 # (driver.get) to complete. Without it the navigation blocks indefinitely when
@@ -1373,8 +1369,57 @@ EXPLORE_FORM_DATA_CACHE_CONFIG: CacheConfig = {
     "CODEC": JsonKeyValueCodec(),
 }
 
+# Extension Tier 2: Ephemeral State - Server-side cache with TTL.
+# Short-lived KV storage that automatically expires. Not guaranteed to
+# survive server restarts. Use for temporary state like job progress,
+# intermediate results, or cross-request state. Can be replaced by any
+# `Flask-Caching` backend (e.g. RedisCache for production).
+EXTENSIONS_EPHEMERAL_STORAGE: CacheConfig = {
+    "CACHE_TYPE": "SupersetMetastoreCache",
+    # Maximum TTL (in seconds) that clients may request. Requests exceeding
+    # this value are rejected. Defaults to 7 days.
+    "MAX_TTL": int(timedelta(days=7).total_seconds()),
+    # Maximum size (in bytes) of a single stored value. Requests exceeding
+    # this value are rejected. Defaults to 100 KB.
+    "MAX_VALUE_SIZE": 100 * 1024,
+    # The following parameter only applies to `MetastoreCache`:
+    # How should entries be serialized/deserialized?
+    "CODEC": JsonKeyValueCodec(),
+}
+
+# Extension Tier 3: Persistent State - Database storage.
+# Durable KV storage backed by a dedicated database table (`extension_storage`).
+# Survives server restarts, cache evictions, and browser clears.
+EXTENSIONS_PERSISTENT_STORAGE: dict[str, Any] = {
+    # Maximum storage quota per extension in bytes (default: 100 MB)
+    "QUOTA_PER_EXTENSION": 100 * 1024 * 1024,
+    # Maximum size (in bytes) of a single stored value. Requests exceeding
+    # this value are rejected. Defaults to 1 MB.
+    "MAX_VALUE_SIZE": 1024 * 1024,
+    # Maximum combined value size (in bytes) that a single `list()` page may
+    # return. Requests whose page would exceed this are rejected rather than
+    # silently truncated. Defaults to 10 MB.
+    # NOTE: this response is consumed as JSON by the browser (REST API and
+    # frontend SDK), not just backend code — raising this substantially
+    # above the default risks client-side memory/parse-time issues.
+    "MAX_LIST_PAYLOAD_SIZE": 10 * 1024 * 1024,
+}
+
 # store cache keys by datasource UID (via CacheKey) for custom processing/invalidation
 STORE_CACHE_KEYS_IN_METADATA_DB = False
+
+# Cache timeout (in seconds) specifically for native dashboard filter option queries.
+# Native filter queries use `DATA_CACHE_CONFIG` as their backend, but their TTL can be
+# configured independently here because they often require fresher data (e.g., for
+# datasets whose visible values change frequently, including RLS-constrained datasets).
+#
+# Valid values:
+#   None : Preserve the existing cache timeout resolution chain.
+#   -1   : Completely disable cache writes for native filter options.
+#   0    : Passed directly to the underlying cache backend. Backend-specific
+#          behavior may vary. Do not use 0 to disable caching; use -1 instead.
+#   >0   : Cache filter options for the specified number of seconds.
+NATIVE_FILTER_OPTIONS_CACHE_TIMEOUT: int | None = None
 
 # CORS Options
 # NOTE: enabling this requires installing the cors-related python dependencies

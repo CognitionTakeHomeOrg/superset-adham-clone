@@ -68,6 +68,8 @@ function getProviders() {
     const { themeObject } = require('@apache-superset/core/theme');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { App, ConfigProvider } = require('antd');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useColorMode } = require('@docusaurus/theme-common');
 
     // Configure Ant Design to render portals (tooltips, dropdowns, etc.)
     // inside the closest .storybook-example container instead of document.body
@@ -78,15 +80,32 @@ function getProviders() {
       return container || document.body;
     };
 
+    // `themeObject` is a module-level singleton (superset-core/src/theme
+    // index.tsx: `Theme.fromConfig()`), created once with no dark/light
+    // config, so SupersetThemeProvider always rendered whatever that default
+    // algorithm was -- it had no way to know about Docusaurus's theme toggle.
+    // Docusaurus tracks the toggle in React context (useColorMode), so
+    // mirror it onto the singleton via the toggleDarkMode() method Theme
+    // already exposes for exactly this purpose.
+    function ThemeSync({ children }) {
+      const { colorMode } = useColorMode();
+      React.useEffect(() => {
+        themeObject.toggleDarkMode(colorMode === 'dark');
+      }, [colorMode]);
+      return children;
+    }
+
     SupersetProviders = ({ children }) => (
-      <themeObject.SupersetThemeProvider>
-        <ConfigProvider
-          getPopupContainer={getPopupContainer}
-          getTargetContainer={() => document.body}
-        >
-          <App>{children}</App>
-        </ConfigProvider>
-      </themeObject.SupersetThemeProvider>
+      <ThemeSync>
+        <themeObject.SupersetThemeProvider>
+          <ConfigProvider
+            getPopupContainer={getPopupContainer}
+            getTargetContainer={() => document.body}
+          >
+            <App>{children}</App>
+          </ConfigProvider>
+        </themeObject.SupersetThemeProvider>
+      </ThemeSync>
     );
     return SupersetProviders;
   } catch (error) {
@@ -133,7 +152,7 @@ function LoadingPlaceholder() {
   return (
     <div
       style={{
-        border: '1px solid #e8e8e8',
+        border: '1px solid var(--ifm-color-emphasis-300)',
         borderRadius: '4px',
         padding: '20px',
         marginBottom: '20px',
@@ -141,7 +160,7 @@ function LoadingPlaceholder() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#999',
+        color: 'var(--ifm-color-emphasis-600)',
       }}
     >
       Loading component...
@@ -162,7 +181,7 @@ export function StoryExample({ component, props = {} }) {
             <div
               className="storybook-example"
               style={{
-                border: '1px solid #e8e8e8',
+                border: '1px solid var(--ifm-color-emphasis-300)',
                 borderRadius: '4px',
                 padding: '20px',
                 marginBottom: '20px',
@@ -172,7 +191,7 @@ export function StoryExample({ component, props = {} }) {
               {Component ? (
                 <Component {...restProps}>{children}</Component>
               ) : (
-                <div style={{ color: '#999' }}>
+                <div style={{ color: 'var(--ifm-color-emphasis-600)' }}>
                   Component &quot;{String(component)}&quot; not found
                 </div>
               )}
@@ -341,7 +360,7 @@ function StoryWithControlsInner({ component, renderComponent, props, controls, s
         <div
           className="storybook-example"
           style={{
-            border: '1px solid #e8e8e8',
+            border: '1px solid var(--ifm-color-emphasis-300)',
             borderRadius: '4px',
             padding: '20px',
             marginBottom: '20px',
@@ -359,7 +378,7 @@ function StoryWithControlsInner({ component, renderComponent, props, controls, s
               <Component {...filteredProps} {...triggerProps}>{children}</Component>
             </>
           ) : (
-            <div style={{ color: '#999' }}>
+            <div style={{ color: 'var(--ifm-color-emphasis-600)' }}>
               Component &quot;{String(componentToRender)}&quot; not found
             </div>
           )}
@@ -369,7 +388,7 @@ function StoryWithControlsInner({ component, renderComponent, props, controls, s
           <div
             className="storybook-controls"
             style={{
-              border: '1px solid #e8e8e8',
+              border: '1px solid var(--ifm-color-emphasis-300)',
               borderRadius: '4px',
               padding: '20px',
               marginBottom: '20px',
@@ -483,7 +502,7 @@ function ComponentGalleryInner({ component, sizes, styles, sizeProp, styleProp }
 
   if (!Component) {
     return (
-      <div style={{ color: '#999' }}>
+      <div style={{ color: 'var(--ifm-color-emphasis-600)' }}>
         Component &quot;{String(component)}&quot; not found
       </div>
     );
@@ -494,7 +513,14 @@ function ComponentGalleryInner({ component, sizes, styles, sizeProp, styleProp }
       <div className="component-gallery">
         {sizes.map(size => (
           <div key={size} style={{ marginBottom: 40 }}>
-            <h4 style={{ marginBottom: 16, color: '#666' }}>{size}</h4>
+            <h4
+              style={{
+                marginBottom: 16,
+                color: 'var(--ifm-color-emphasis-700)',
+              }}
+            >
+              {size}
+            </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
               {styles.map(style => (
                 <Component

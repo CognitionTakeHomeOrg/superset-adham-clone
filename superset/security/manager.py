@@ -279,7 +279,7 @@ class SupersetGroupApi(GroupApi):
     @expose("/<pk>", methods=["PUT"])
     @protect()
     @safe
-    def put(self, pk: int) -> Response:  # type: ignore[override]
+    def put(self, pk: int) -> Response:
         """Update a group.
         ---
         put:
@@ -407,7 +407,7 @@ class SupersetUserApi(UserApi):
     @expose("/<pk>", methods=["PUT"])
     @protect()
     @safe
-    def put(self, pk: int) -> Response:  # type: ignore[override]
+    def put(self, pk: int) -> Response:
         """Update a user.
         ---
         put:
@@ -2190,7 +2190,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             tables = (
                 self.session.query(SqlaTable.schema)
                 .filter(SqlaTable.database_id == database.id)
-                .filter(or_(SqlaTable.perm.in_(perms)))  # type: ignore[union-attr]
+                .filter(or_(SqlaTable.perm.in_(perms)))
                 .distinct()
             )
             accessible_schemas.update(
@@ -2250,7 +2250,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             tables = (
                 self.session.query(SqlaTable.schema)
                 .filter(SqlaTable.database_id == database.id)
-                .filter(or_(SqlaTable.perm.in_(perms)))  # type: ignore[union-attr]
+                .filter(or_(SqlaTable.perm.in_(perms)))
                 .distinct()
             )
             accessible_catalogs.update(

@@ -1,0 +1,55 @@
+# The ratchet.
+#
+# Superset already runs every one of these checks and enforces none of them --
+# `npm run lint` passes `--quiet`, which counts findings and discards them. This
+# job is what turns the count into a constraint.
+#
+# It does not demand zero. It demands "no worse than the committed ceiling",
+# which is a bar this repository can actually hold today.
+#
+# Actions are pinned by digest and permissions are declared explicitly, because
+# this repository's own zizmor audit requires both -- and a pull request that
+# turns on enforcement while failing an existing gate would be the most
+# embarrassing artifact this project could produce. The digests match the ones
+# already used across the other 36 workflows here.
+name: ratchet
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  counting-ratchet:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nothing here pushes; leaving the token in .git/config would let any
+          # later step, or a compromised dependency, use it.
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: superset-frontend/.nvmrc
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: install frontend deps
+        working-directory: superset-frontend
+        run: npm ci --prefer-offline --no-audit
+      - name: install the mypy gate
+        # Stub packages only. Installing Superset's real dependencies here would
+        # change the answer -- see ratchet-mypy.ini.
+        run: |
+          python -m venv /tmp/mypy-gate
+          /tmp/mypy-gate/bin/pip install "mypy==1.15.0" \
+            types-cachetools types-simplejson types-python-dateutil types-requests \
+            types-pytz types-croniter types-PyYAML types-setuptools types-paramiko \
+            types-Markdown
+      - name: ratchet
+        run: python scripts/ratchet_check.py

@@ -131,6 +131,7 @@ interface Metric {
   certification_details?: string;
   warning_markdown?: string;
   extra?: string;
+  is_certified?: boolean;
 }
 
 interface Column {
@@ -437,6 +438,141 @@ const checkboxGenerator = (
   d: boolean,
   onChange: (value: boolean) => void,
 ): ReactNode => <CheckboxControl value={d} onChange={onChange} />;
+
+const certifiedColumnName = (content: ReactNode, record: Column): ReactNode => (
+  <StyledLabelWrapper>
+    {record.is_certified && (
+      <CertifiedBadge
+        certifiedBy={record.certified_by}
+        details={record.certification_details}
+      />
+    )}
+    {content}
+  </StyledLabelWrapper>
+);
+
+const editableTitleColumnNameGenerator = (
+  v: unknown,
+  onItemChange: (value: unknown) => void,
+  _label: string,
+  record: Column,
+): ReactNode =>
+  certifiedColumnName(
+    <EditableTitle canEdit title={v as string} onSaveTitle={onItemChange} />,
+    record,
+  );
+
+const textControlColumnNameGenerator = (
+  v: unknown,
+  onItemChange: (value: unknown) => void,
+  _label: string,
+  record: Column,
+): ReactNode =>
+  certifiedColumnName(
+    <TextControl value={v as string} onChange={onItemChange} />,
+    record,
+  );
+
+const readOnlyColumnNameGenerator = (
+  v: unknown,
+  _onItemChange: (value: unknown) => void,
+  _label: string,
+  record: Column,
+): ReactNode => certifiedColumnName(v as ReactNode, record);
+
+const dataTypeGenerator = (d: unknown): ReactNode =>
+  d ? <Label>{String(d)}</Label> : null;
+
+const advancedDataTypeGenerator = (d: unknown): ReactNode => (
+  <Label>{d as string}</Label>
+);
+
+const metricNameGenerator = (
+  v: unknown,
+  onItemChange: (value: unknown) => void,
+  _label: string,
+  record: Metric,
+): ReactNode => (
+  <FlexRowContainer>
+    {record.is_certified && (
+      <CertifiedBadge
+        certifiedBy={record.certified_by}
+        details={record.certification_details}
+      />
+    )}
+    {record.warning_markdown && (
+      <WarningIconWithTooltip warningMarkdown={record.warning_markdown} />
+    )}
+    <EditableTitle
+      canEdit
+      title={v as string}
+      onSaveTitle={onItemChange}
+      maxWidth={300}
+    />
+  </FlexRowContainer>
+);
+
+const metricExpressionGenerator = (v: unknown): ReactNode => (
+  <Tooltip title={t('Expand row to edit')}>
+    <Typography.Text
+      code
+      ellipsis
+      css={css`
+        cursor: default;
+      `}
+    >
+      {v as string}
+    </Typography.Text>
+  </Tooltip>
+);
+
+const textControlGenerator = (
+  v: unknown,
+  onItemChange: (value: unknown) => void,
+): ReactNode => <TextControl value={v as string} onChange={onItemChange} />;
+
+function StackedField({ label, formElement }: StackedFieldProps): JSX.Element {
+  return (
+    <div>
+      <div>
+        <strong>{label}</strong>
+      </div>
+      <div>{formElement}</div>
+    </div>
+  );
+}
+
+const stackedTextControlGenerator = (
+  v: unknown,
+  onItemChange: (value: unknown) => void,
+  label: string,
+): ReactNode => (
+  <StackedField
+    label={label}
+    formElement={<TextControl value={v as string} onChange={onItemChange} />}
+  />
+);
+
+const editableTitleGenerator = (
+  v: unknown,
+  onChange: (value: unknown) => void,
+): ReactNode => (
+  <EditableTitle canEdit title={v as string} onSaveTitle={onChange} />
+);
+
+const spatialConfigGenerator =
+  (allCols?: string[]) =>
+  (v: unknown, onChange: (value: unknown) => void): ReactNode => (
+    <SpatialControl
+      value={
+        v as {
+          type: 'latlong' | 'delimited' | 'geohash';
+        }
+      }
+      onChange={onChange}
+      choices={allCols?.map(col => [col, col] as [string, string])}
+    />
+  );
 const DATA_TYPES = [
   { value: 'STRING', label: t('STRING') },
   { value: 'NUMERIC', label: t('NUMERIC') },
@@ -685,79 +821,26 @@ function ColumnCollectionTable({
       itemRenderers={
         isFeatureEnabled(FeatureFlag.EnableAdvancedDataTypes)
           ? {
-              column_name: (v, onItemChange, _, record) =>
-                editableColumnName ? (
-                  <StyledLabelWrapper>
-                    {record.is_certified && (
-                      <CertifiedBadge
-                        certifiedBy={record.certified_by}
-                        details={record.certification_details}
-                      />
-                    )}
-                    <EditableTitle
-                      canEdit
-                      title={v as string}
-                      onSaveTitle={onItemChange}
-                    />
-                  </StyledLabelWrapper>
-                ) : (
-                  <StyledLabelWrapper>
-                    {record.is_certified && (
-                      <CertifiedBadge
-                        certifiedBy={record.certified_by}
-                        details={record.certification_details}
-                      />
-                    )}
-                    {v}
-                  </StyledLabelWrapper>
-                ),
-              type: d => (d ? <Label>{String(d)}</Label> : null),
-              advanced_data_type: d => <Label>{d as string}</Label>,
+              column_name: editableColumnName
+                ? editableTitleColumnNameGenerator
+                : readOnlyColumnNameGenerator,
+              type: dataTypeGenerator,
+              advanced_data_type: advancedDataTypeGenerator,
               is_dttm: checkboxGenerator,
               filterable: checkboxGenerator,
               groupby: checkboxGenerator,
             }
           : {
-              column_name: (v, onItemChange, _, record) =>
-                editableColumnName ? (
-                  <StyledLabelWrapper>
-                    {record.is_certified && (
-                      <CertifiedBadge
-                        certifiedBy={record.certified_by}
-                        details={record.certification_details}
-                      />
-                    )}
-                    <TextControl value={v as string} onChange={onItemChange} />
-                  </StyledLabelWrapper>
-                ) : (
-                  <StyledLabelWrapper>
-                    {record.is_certified && (
-                      <CertifiedBadge
-                        certifiedBy={record.certified_by}
-                        details={record.certification_details}
-                      />
-                    )}
-                    {v}
-                  </StyledLabelWrapper>
-                ),
-              type: d => (d ? <Label>{String(d)}</Label> : null),
+              column_name: editableColumnName
+                ? textControlColumnNameGenerator
+                : readOnlyColumnNameGenerator,
+              type: dataTypeGenerator,
               is_dttm: checkboxGenerator,
               filterable: checkboxGenerator,
               groupby: checkboxGenerator,
             }
       }
     />
-  );
-}
-
-function StackedField({ label, formElement }: StackedFieldProps): JSX.Element {
-  return (
-    <div>
-      <div>
-        <strong>{label}</strong>
-      </div>
-      <div>{formElement}</div>
-    </div>
   );
 }
 
@@ -2248,59 +2331,11 @@ function DatasourceEditor({
             }),
           }}
           itemRenderers={{
-            metric_name: (v, onItemChange, _, record) => (
-              <FlexRowContainer>
-                {record.is_certified && (
-                  <CertifiedBadge
-                    certifiedBy={record.certified_by}
-                    details={record.certification_details}
-                  />
-                )}
-                {record.warning_markdown && (
-                  <WarningIconWithTooltip
-                    warningMarkdown={record.warning_markdown}
-                  />
-                )}
-                <EditableTitle
-                  canEdit
-                  title={v as string}
-                  onSaveTitle={onItemChange}
-                  maxWidth={300}
-                />
-              </FlexRowContainer>
-            ),
-            verbose_name: (v, onItemChange) => (
-              <TextControl value={v as string} onChange={onItemChange} />
-            ),
-            expression: (v: unknown) => (
-              <Tooltip title={t('Expand row to edit')}>
-                <Typography.Text
-                  code
-                  ellipsis
-                  css={css`
-                    cursor: default;
-                  `}
-                >
-                  {v as string}
-                </Typography.Text>
-              </Tooltip>
-            ),
-            description: (v, onItemChange, label) => (
-              <StackedField
-                label={label}
-                formElement={
-                  <TextControl value={v as string} onChange={onItemChange} />
-                }
-              />
-            ),
-            d3format: (v, onItemChange, label) => (
-              <StackedField
-                label={label}
-                formElement={
-                  <TextControl value={v as string} onChange={onItemChange} />
-                }
-              />
-            ),
+            metric_name: metricNameGenerator,
+            verbose_name: textControlGenerator,
+            expression: metricExpressionGenerator,
+            description: stackedTextControlGenerator,
+            d3format: stackedTextControlGenerator,
           }}
           allowDeletes
           stickyHeader
@@ -2338,24 +2373,8 @@ function DatasourceEditor({
           collection={spatials ?? []}
           allowDeletes
           itemRenderers={{
-            name: (d, onChange) => (
-              <EditableTitle
-                canEdit
-                title={d as string}
-                onSaveTitle={onChange}
-              />
-            ),
-            config: (v, onChange) => (
-              <SpatialControl
-                value={
-                  v as {
-                    type: 'latlong' | 'delimited' | 'geohash';
-                  }
-                }
-                onChange={onChange}
-                choices={allCols?.map(col => [col, col] as [string, string])}
-              />
-            ),
+            name: editableTitleGenerator,
+            config: spatialConfigGenerator(allCols),
           }}
         />
       ),

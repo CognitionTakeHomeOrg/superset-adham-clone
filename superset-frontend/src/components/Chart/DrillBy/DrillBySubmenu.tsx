@@ -53,6 +53,33 @@ import { Dataset } from '../types';
 const SUBMENU_HEIGHT = 200;
 const SHOW_COLUMNS_SEARCH_THRESHOLD = 10;
 
+interface DrillByRowData {
+  columns: Column[];
+  onSelect: (event: React.MouseEvent, column: Column) => void;
+}
+
+const DrillByColumnRow = ({
+  index,
+  data,
+  style,
+}: {
+  index: number;
+  data: DrillByRowData;
+  style: CSSProperties;
+}) => {
+  const { columns, onSelect } = data;
+  const column = columns[index];
+  return (
+    <VirtualizedMenuItem
+      tooltipText={column.verbose_name || column.column_name}
+      onClick={e => onSelect(e, column)}
+      style={style}
+    >
+      {column.verbose_name || column.column_name}
+    </VirtualizedMenuItem>
+  );
+};
+
 export interface DrillBySubmenuProps {
   drillByConfig?: ContextMenuFilters['drillBy'];
   formData: BaseFormData & { [key: string]: any };
@@ -170,6 +197,11 @@ export const DrillBySubmenu = ({
     [columns, debouncedSearchInput, excludedColumns],
   );
 
+  const rowData = useMemo<DrillByRowData>(
+    () => ({ columns: filteredColumns, onSelect: handleSelection }),
+    [filteredColumns, handleSelection],
+  );
+
   let tooltip: ReactNode;
 
   if (!handlesDimensionContextMenu) {
@@ -189,28 +221,6 @@ export const DrillBySubmenu = ({
   }
 
   const isDisabled = !handlesDimensionContextMenu || !hasDrillBy;
-
-  const Row = ({
-    index,
-    data,
-    style,
-  }: {
-    index: number;
-    data: { columns: Column[] };
-    style: CSSProperties;
-  }) => {
-    const { columns } = data;
-    const column = columns[index];
-    return (
-      <VirtualizedMenuItem
-        tooltipText={column.verbose_name || column.column_name}
-        onClick={e => handleSelection(e, column)}
-        style={style}
-      >
-        {column.verbose_name || column.column_name}
-      </VirtualizedMenuItem>
-    );
-  };
 
   const popoverContent = (
     <div
@@ -264,10 +274,10 @@ export const DrillBySubmenu = ({
           height={SUBMENU_HEIGHT}
           itemSize={35}
           itemCount={filteredColumns.length}
-          itemData={{ columns: filteredColumns }}
+          itemData={rowData}
           overscanCount={20}
         >
-          {Row}
+          {DrillByColumnRow}
         </List>
       ) : (
         <div

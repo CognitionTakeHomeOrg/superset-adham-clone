@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ReactNode } from 'react';
 import { t, tn } from '@apache-superset/core/translation';
 
 import type { ErrorMessageComponentProps } from './types';
@@ -62,9 +61,10 @@ export function TimeoutErrorMessage({
       <p>
         {t('This may be triggered by:')}
         <br />
-        {extra.issue_codes
-          .map<ReactNode>(issueCode => <IssueCode {...issueCode} />)
-          .reduce((prev, curr) => [prev, <br />, curr])}
+        {extra.issue_codes.flatMap((issueCode, idx, arr) => [
+          <IssueCode {...issueCode} key={issueCode.code} />,
+          idx < arr.length - 1 ? <br key={`br-${issueCode.code}`} /> : null,
+        ])}
       </p>
       {isVisualization && extra.editors && (
         <>

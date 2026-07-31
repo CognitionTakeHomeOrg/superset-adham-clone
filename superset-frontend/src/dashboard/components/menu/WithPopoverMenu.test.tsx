@@ -23,7 +23,7 @@ import WithPopoverMenu from 'src/dashboard/components/menu/WithPopoverMenu';
 const props = {
   children: <div id="child" />,
   disableClick: false,
-  menuItems: [<div id="menu1" />, <div id="menu2" />],
+  menuItems: [<div key="menu1" id="menu1" />, <div key="menu2" id="menu2" />],
   onChangeFocus() {},
   shouldFocus: () => true, // needed for mock
   isFocused: false,

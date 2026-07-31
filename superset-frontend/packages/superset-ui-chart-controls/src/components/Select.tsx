@@ -87,7 +87,9 @@ export default function Select<VT extends string | number>({
       }}
     >
       {options?.map(([val, label]) => (
-        <Option value={val}>{label}</Option>
+        <Option key={val} value={val}>
+          {label}
+        </Option>
       ))}
       {children}
       {value && !optionsHasValue && (

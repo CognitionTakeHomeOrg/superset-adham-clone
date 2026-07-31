@@ -1,0 +1,27 @@
+{
+  "_comment": "Committed ceilings. Lower them freely in a PR that reduces debt. Raising one is a deliberate, reviewable act.",
+  "measured_at": "9da977cba25a55c1dc6ae64da6e338f0910cf28c",
+  "mypy_bin": "/tmp/mypy-gate/bin/mypy",
+  "gates": {
+    "react-hooks/rules-of-hooks": {
+      "ceiling": 32,
+      "kind": "oxlint"
+    },
+    "react/no-unstable-nested-components": {
+      "ceiling": 150,
+      "kind": "oxlint"
+    },
+    "react/jsx-key": {
+      "ceiling": 77,
+      "kind": "oxlint"
+    },
+    "@typescript-eslint/ban-ts-comment": {
+      "ceiling": 197,
+      "kind": "oxlint"
+    },
+    "unused-ignore": {
+      "ceiling": 43,
+      "kind": "mypy"
+    }
+  }
+}

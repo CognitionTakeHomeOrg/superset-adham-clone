@@ -35,7 +35,11 @@ export const titleControls: ControlPanelSectionConfig = {
   tabOverride: 'customize',
   expanded: true,
   controlSetRows: [
-    [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+    [
+      <ControlSubSectionHeader key="x-axis">
+        {t('X Axis')}
+      </ControlSubSectionHeader>,
+    ],
     [
       {
         name: 'x_axis_title',
@@ -61,7 +65,11 @@ export const titleControls: ControlPanelSectionConfig = {
         },
       },
     ],
-    [<ControlSubSectionHeader>{t('Y Axis')}</ControlSubSectionHeader>],
+    [
+      <ControlSubSectionHeader key="y-axis">
+        {t('Y Axis')}
+      </ControlSubSectionHeader>,
+    ],
     [
       {
         name: 'y_axis_title',

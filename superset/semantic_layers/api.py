@@ -566,7 +566,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
               $ref: '#/components/responses/401'
         """
         result = [
-            {"id": key, "name": cls.name, "description": cls.description}  # type: ignore[attr-defined]
+            {"id": key, "name": cls.name, "description": cls.description}
             for key, cls in registry.items()
         ]
         return self.response(200, result=result)
@@ -681,7 +681,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
 
         try:
             schema = cls.get_runtime_schema(
-                layer.implementation.configuration,  # type: ignore[attr-defined]
+                layer.implementation.configuration,
                 runtime_data,
             )
         except Exception as ex:  # pylint: disable=broad-except
@@ -961,7 +961,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
         all_items = self._fetch_connection_items(source_type, name_filter)
 
         sort_key = self._get_connection_sort_key(order_column)
-        all_items.sort(key=sort_key, reverse=order_direction == "desc")  # type: ignore
+        all_items.sort(key=sort_key, reverse=order_direction == "desc")
         total_count = len(all_items)
 
         start = page * page_size
@@ -1037,7 +1037,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
             sl_items = [("semantic_layer", obj) for obj in sl_q.all()]
 
         # TODO: move sort + pagination to SQL before GA.
-        return db_items + sl_items  # type: ignore
+        return db_items + sl_items
 
     @staticmethod
     def _get_connection_sort_key(order_column: str) -> Any:
@@ -1053,11 +1053,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
             item: tuple[str, Database | SemanticLayer],
         ) -> str:
             obj = item[1]
-            raw = (
-                obj.database_name  # type: ignore[union-attr]
-                if item[0] == "database"
-                else obj.name
-            )
+            raw = obj.database_name if item[0] == "database" else obj.name
             return raw.lower()
 
         sort_key_map = {
@@ -1093,7 +1089,7 @@ class SemanticLayerRestApi(BaseSupersetApi):
         changed_by = obj.changed_by
         sl_type = obj.type
         cls = registry.get(sl_type)
-        type_name = cls.name if cls else sl_type  # type: ignore[attr-defined]
+        type_name = cls.name if cls else sl_type
         return {
             "source_type": "semantic_layer",
             "uuid": str(obj.uuid),

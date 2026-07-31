@@ -242,12 +242,14 @@ function Header({
             onChangeFocus={handleChangeFocus}
             menuItems={[
               <PopoverDropdown
+                key={`${component.id}-header-style`}
                 id={`${component.id}-header-style`}
                 options={headerStyleOptions}
                 value={component.meta.headerSize as string}
                 onChange={handleChangeSize}
               />,
               <BackgroundStyleDropdown
+                key={`${component.id}-background`}
                 id={`${component.id}-background`}
                 value={component.meta.background as string}
                 onChange={handleChangeBackground}

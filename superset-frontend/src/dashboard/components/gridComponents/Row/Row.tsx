@@ -276,6 +276,7 @@ const Row = memo((props: RowProps) => {
         disableClick
         menuItems={[
           <BackgroundStyleDropdown
+            key={`${rowComponent.id}-background`}
             id={`${rowComponent.id}-background`}
             value={backgroundStyle.value}
             onChange={handleChangeBackground}

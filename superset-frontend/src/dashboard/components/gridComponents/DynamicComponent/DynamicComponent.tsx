@@ -123,6 +123,7 @@ const DynamicComponent: FC<DynamicComponentProps> = ({
         <WithPopoverMenu
           menuItems={[
             <BackgroundStyleDropdown
+              key={`${component.id}-background`}
               id={`${component.id}-background`}
               value={component.meta.background}
               onChange={value =>

@@ -31,6 +31,7 @@ export const useCrossFiltersScopingModal = (
     openModal,
     isVisible ? (
       <ScopingModal
+        key="cross-filters-scoping-modal"
         initialChartId={initialChartId}
         closeModal={closeModal}
         isVisible={isVisible}

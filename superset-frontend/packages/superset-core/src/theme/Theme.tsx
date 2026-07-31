@@ -16,15 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable react-prefer-function-component/react-prefer-function-component */
-// eslint-disable-next-line no-restricted-syntax
-import React from 'react';
+import { useState, type FC, type ReactNode } from 'react';
 import { theme as antdThemeImport, ConfigProvider } from 'antd';
 import {
   ThemeProvider,
   CacheProvider as EmotionCacheProvider,
 } from '@emotion/react';
-import createCache from '@emotion/cache';
+import createCache, { type EmotionCache } from '@emotion/cache';
 import { noop, mergeWith } from 'lodash-es';
 import { GlobalStyles } from './GlobalStyles';
 import {
@@ -36,6 +34,42 @@ import {
   SharedAntdTokens,
 } from './types';
 import { normalizeThemeConfig, serializeThemeConfig } from './utils';
+
+interface ThemeState {
+  theme: SupersetTheme;
+  antdConfig: AntdThemeConfig;
+  emotionCache: EmotionCache;
+}
+
+/**
+ * Builds the provider component of a `Theme` instance. The provider owns the
+ * rendered theme state and hands its setter back to the instance so that
+ * `setConfig` can push updates into the React tree.
+ */
+function createThemeProvider({
+  getInitialState,
+  registerUpdater,
+}: {
+  getInitialState: () => ThemeState;
+  registerUpdater: (update: (state: ThemeState) => void) => void;
+}): FC<{ children: ReactNode }> {
+  return function SupersetThemeProvider({ children }: { children: ReactNode }) {
+    const [themeState, setThemeState] = useState(getInitialState);
+
+    registerUpdater(setThemeState);
+
+    return (
+      <EmotionCacheProvider value={themeState.emotionCache}>
+        <ThemeProvider theme={themeState.theme}>
+          <GlobalStyles />
+          <ConfigProvider theme={themeState.antdConfig}>
+            {children}
+          </ConfigProvider>
+        </ThemeProvider>
+      </EmotionCacheProvider>
+    );
+  };
+}
 
 export class Theme {
   // Forward-compat: TS 6.0 enforces strictPropertyInitialization here;
@@ -50,8 +84,26 @@ export class Theme {
 
   private antdConfig!: AntdThemeConfig;
 
+  SupersetThemeProvider: FC<{ children: ReactNode }>;
+
   private constructor({ config }: { config?: AnyThemeConfig }) {
-    this.SupersetThemeProvider = this.SupersetThemeProvider.bind(this);
+    this.SupersetThemeProvider = createThemeProvider({
+      getInitialState: () => {
+        if (!this.theme || !this.antdConfig) {
+          throw new Error('Theme is not initialized.');
+        }
+        return {
+          theme: this.theme,
+          antdConfig: this.antdConfig,
+          emotionCache: createCache({ key: 'superset' }),
+        };
+      },
+      registerUpdater: update => {
+        this.updateProviders = (theme, antdConfig, emotionCache) => {
+          update({ theme, antdConfig, emotionCache });
+        };
+      },
+    });
     this.setConfig(config || {});
   }
 
@@ -196,37 +248,9 @@ export class Theme {
   private updateProviders(
     theme: SupersetTheme,
     antdConfig: AntdThemeConfig,
-    emotionCache: any,
+    emotionCache: EmotionCache,
   ): void {
     noop(theme, antdConfig, emotionCache);
-    // Overridden at runtime by SupersetThemeProvider using setThemeState
-  }
-
-  SupersetThemeProvider({ children }: { children: React.ReactNode }) {
-    if (!this.theme || !this.antdConfig) {
-      throw new Error('Theme is not initialized.');
-    }
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [themeState, setThemeState] = React.useState({
-      theme: this.theme,
-      antdConfig: this.antdConfig,
-      emotionCache: createCache({ key: 'superset' }),
-    });
-
-    this.updateProviders = (theme, antdConfig, emotionCache) => {
-      setThemeState({ theme, antdConfig, emotionCache });
-    };
-
-    return (
-      <EmotionCacheProvider value={themeState.emotionCache}>
-        <ThemeProvider theme={themeState.theme}>
-          <GlobalStyles />
-          <ConfigProvider theme={themeState.antdConfig}>
-            {children}
-          </ConfigProvider>
-        </ThemeProvider>
-      </EmotionCacheProvider>
-    );
+    // Overridden by the provider returned from createThemeProvider
   }
 }

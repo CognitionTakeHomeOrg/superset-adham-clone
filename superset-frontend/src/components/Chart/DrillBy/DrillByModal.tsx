@@ -40,6 +40,7 @@ import {
   Breadcrumb,
   Flex,
 } from '@superset-ui/core/components';
+import type { BreadcrumbProps } from '@superset-ui/core/components/Breadcrumb';
 import { RootState } from 'src/dashboard/types';
 import { DashboardPageIdContext } from 'src/dashboard/containers/DashboardPage';
 import { postFormData } from 'src/explore/exploreUtils/formData';
@@ -73,6 +74,37 @@ interface DrillByBreadcrumb {
   groupby: Column | Column[];
   filters?: BinaryQueryObjectFilterClause[];
 }
+
+const renderBreadcrumbItem: NonNullable<BreadcrumbProps['itemRender']> = (
+  route,
+  _,
+  routes,
+  paths,
+) => {
+  const isLastElement = routes.indexOf(route) === routes.length - 1;
+  return isLastElement ? (
+    <span data-test="drill-by-breadcrumb-item">
+      {route.title}
+      {paths}
+    </span>
+  ) : (
+    <button
+      type="button"
+      data-test="drill-by-breadcrumb-item"
+      onClick={route.onClick}
+      css={css`
+        appearance: none;
+        border: none;
+        background: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+      `}
+    >
+      {route.title}
+    </button>
+  );
+};
 
 const ModalFooter = ({ formData, closeModal }: ModalFooterProps) => {
   const dispatch = useDispatch();
@@ -552,31 +584,7 @@ export default function DrillByModal({
             margin-bottom: ${theme.sizeUnit * 2}px;
           `}
           items={breadcrumbItems}
-          itemRender={(route, _, routes, paths) => {
-            const isLastElement = routes.indexOf(route) === routes.length - 1;
-            return isLastElement ? (
-              <span data-test="drill-by-breadcrumb-item">
-                {route.title}
-                {paths}
-              </span>
-            ) : (
-              <button
-                type="button"
-                data-test="drill-by-breadcrumb-item"
-                onClick={route.onClick}
-                css={css`
-                  appearance: none;
-                  border: none;
-                  background: none;
-                  padding: 0;
-                  font: inherit;
-                  cursor: pointer;
-                `}
-              >
-                {route.title}
-              </button>
-            );
-          }}
+          itemRender={renderBreadcrumbItem}
         />
         {displayModeToggle}
         {isChartDataLoading && <Loading />}

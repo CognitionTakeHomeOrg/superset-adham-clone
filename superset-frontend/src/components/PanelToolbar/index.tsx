@@ -115,6 +115,17 @@ const PanelToolbar = ({
     }
   `;
 
+  const secondaryActionsMenu = (
+    <Menu
+      css={css`
+        & .ant-dropdown-menu-title-content > div {
+          gap: ${theme.sizeUnit * 4}px;
+        }
+      `}
+      items={secondaryActions}
+    />
+  );
+
   return (
     <div css={toolbarStyles}>
       {hasPrimaryActions && (
@@ -125,19 +136,7 @@ const PanelToolbar = ({
       )}
       {hasPrimaryActions && hasSecondaryActions && <Divider type="vertical" />}
       {hasSecondaryActions && (
-        <Dropdown
-          popupRender={() => (
-            <Menu
-              css={css`
-                & .ant-dropdown-menu-title-content > div {
-                  gap: ${theme.sizeUnit * 4}px;
-                }
-              `}
-              items={secondaryActions}
-            />
-          )}
-          trigger={['click']}
-        >
+        <Dropdown popupRender={() => secondaryActionsMenu} trigger={['click']}>
           <Button
             showMarginRight={false}
             color="default"

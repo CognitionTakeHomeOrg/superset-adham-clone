@@ -83,6 +83,10 @@ export interface ChartContextMenuRef {
   ) => void;
 }
 
+const renderContextMenuDropdown = (menu: ReactNode) => (
+  <div data-test="chart-context-menu">{menu}</div>
+);
+
 const ChartContextMenu = (
   {
     id,
@@ -420,9 +424,7 @@ const ChartContextMenu = (
             onClose();
           },
         }}
-        dropdownRender={menu => (
-          <div data-test="chart-context-menu">{menu}</div>
-        )}
+        dropdownRender={renderContextMenuDropdown}
         trigger={['click']}
         onOpenChange={value => {
           setVisible(value);

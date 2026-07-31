@@ -52,7 +52,7 @@ import {
 } from 'src/features/datasets/constants';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import { InputRef } from 'antd';
-import type { Datasource, ChangeDatasourceModalProps } from '../types';
+import type { ChangeDatasourceModalProps } from '../types';
 import { datasetLabelLower } from 'src/features/semanticLayers/label';
 
 const CONFIRM_WARNING_MESSAGE = t(
@@ -97,6 +97,28 @@ const StyledSpan = styled.button`
   }
 `;
 
+type SelectedDataset = Dataset & { type: string };
+
+interface DatasetCellProps {
+  row: { original: Dataset };
+}
+
+const renderDatasetNameCell =
+  (onSelect: (datasource: SelectedDataset) => void) =>
+  ({ row: { original } }: DatasetCellProps) => (
+    <StyledSpan
+      type="button"
+      data-test="datasource-link"
+      onClick={() => onSelect({ type: 'table', ...original })}
+    >
+      {original?.table_name}
+    </StyledSpan>
+  );
+
+const renderEditorsCell = ({ row: { original } }: DatasetCellProps) => (
+  <SubjectPile subjects={original.editors ?? []} />
+);
+
 const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
   addDangerToast,
   addSuccessToast,
@@ -109,7 +131,7 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sortBy, setSortBy] = useState<SortByType>(DATASET_SORT_BY);
   const [confirmChange, setConfirmChange] = useState(false);
-  const [confirmedDataset, setConfirmedDataset] = useState<Datasource>();
+  const [confirmedDataset, setConfirmedDataset] = useState<SelectedDataset>();
   const searchRef = useRef<InputRef>(null);
 
   const {
@@ -121,7 +143,7 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
     addDangerToast,
   );
 
-  const selectDatasource = useCallback((datasource: Datasource) => {
+  const selectDatasource = useCallback((datasource: SelectedDataset) => {
     setConfirmChange(true);
     setConfirmedDataset(datasource);
   }, []);
@@ -205,15 +227,7 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
 
   const columns = [
     {
-      Cell: ({ row: { original } }: any) => (
-        <StyledSpan
-          type="button"
-          data-test="datasource-link"
-          onClick={() => selectDatasource({ type: 'table', ...original })}
-        >
-          {original?.table_name}
-        </StyledSpan>
-      ),
+      Cell: renderDatasetNameCell(selectDatasource),
       Header: t('Name'),
       accessor: 'table_name',
       id: 'table_name',
@@ -236,11 +250,7 @@ const ChangeDatasourceModal: FunctionComponent<ChangeDatasourceModalProps> = ({
       id: 'database.database_name',
     },
     {
-      Cell: ({
-        row: {
-          original: { editors = [] },
-        },
-      }: any) => <SubjectPile subjects={editors} />,
+      Cell: renderEditorsCell,
       Header: t('Editors'),
       id: 'editors',
       disableSortBy: true,
